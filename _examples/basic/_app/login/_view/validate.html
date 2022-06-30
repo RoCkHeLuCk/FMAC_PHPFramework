@@ -1,0 +1,74 @@
+<form
+   method="post"
+   enctype="multipart/form-data"
+   autocomplete="off"
+>
+
+   <img
+      height="150px"
+      width="150px"
+      src="public/image/logo2.png"
+      alt="logo"
+      class="h-responsive"
+   />
+
+   <h1>{$language['ValidateTitle']}</h1>
+
+   <div>
+      <label>
+         *{$language['EmailLabel']}
+      </label>
+      <input
+         id="email"
+         maxlength="64"
+         name="email"
+         pattern="{$format['email']}"
+         placeholder="{$language['EmailHolder']}"
+         required="true"
+         type="email"
+      />
+      <div
+         id="emailAlert"
+         class="hidden"
+      />
+   </div>
+
+   <div>
+      <label>
+         *{$language['ValidateCodeLabel']}
+      </label>
+      <input
+         autocomplete="off"
+         id="code"
+         maxlength="4"
+         name="code"
+         pattern="{$format['intU']}"
+         placeholder="{$language['ValidateCodeHolder']}"
+         required="true"
+         type="text"
+      />
+      <div
+         id="codeAlert"
+         class="hidden"
+      />
+   </div>
+
+   <br />
+
+   <div>
+      <input
+         type="submit"
+         id="submit"
+         name="submit"
+         value="{$language['SendBtn']}"
+      />
+      <input
+         type="submit"
+         id="resubmnit"
+         name="resubmnit"
+         value="{$language['ResubmitBtn']}"
+         onclick="document.getElementById('code')
+            .removeAttribute('required');"
+      />
+   </div>
+</form>

@@ -1,0 +1,376 @@
+@charset "UTF-8";
+
+html 
+{
+   position: relative;
+   min-height: 100%;
+   min-width: 100%;
+}
+
+body 
+{
+   /* background: #06446d; */
+   background: -moz-linear-gradient(-45deg, #06446d 0%, #80b9e5 100%);
+   background: -webkit-linear-gradient(-45deg, #06446d 0%,#80b9e5 100%);
+   background: linear-gradient(135deg, #06446d 0%, #80b9e5 100%);
+}
+
+main,
+form 
+{
+   margin: auto;
+   max-width: 600px;
+   min-width: 300px;
+   min-height: 100%;
+   padding: 5px;
+   text-align: center;
+}
+
+a 
+{
+   display: inline-block;
+   margin: auto;
+   font-family: Verdana;
+   font-size: 18px;
+   color: blue;
+}
+
+a:hover 
+{
+   color: #113388;
+}
+
+div select 
+{
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+   background: url("../image/select_arrow.svg") no-repeat;
+   background-size: 24px 24px;
+   background-position-x: right 10px;
+   background-position-y: center;
+}
+
+input,
+div select 
+{
+   box-sizing: border-box;
+   display: block;
+   width: 100%;
+   padding: 10px 20px 10px 20px;
+   font-family: Verdana;
+   font-size: 18px;
+   background-color: #afafaf;
+   -webkit-border-radius: 10px;
+   border-radius: 10px;
+   color: black;
+   border: solid blue 2px;
+   white-space: inherit;
+}
+
+input:hover,
+input:focus,
+div select:hover,
+div select:focus
+{
+   background-color: white;
+}
+
+input:invalid,
+div select:invalid 
+{
+   color: #880000;
+   border: solid red 2px;
+}
+
+input:valid,
+div select:valid 
+{
+   color: black;
+   border: solid green 2px;
+}
+
+input[type="submit"],
+a.button 
+{
+   box-sizing: border-box;
+   display: inline-block;
+   margin-top: 5px;
+   margin-bottom: 5px;
+   margin-left: 10px;
+   margin-right: 10px;
+   width: 230px;
+   padding: 10px 20px 10px 20px;
+   text-align: center;
+   text-decoration: none;
+   font-family: Verdana;
+   font-size: 18px;
+   color: white;
+   background-color: #07446D;
+   -webkit-border-radius: 20px;
+   border-radius: 20px;
+   border: solid #bbbbbb 3px;
+}
+
+input[type="submit"].button-alert,
+a.button.button-alert 
+{
+   background-color: #851111;
+}
+
+input[type="submit"]:hover,
+a.button:hover 
+{
+   cursor: pointer;
+   background-color: #006690;
+   border: solid #06446d 3px;
+   color: black;
+}
+
+input[type="submit"].button-alert:hover,
+a.button.button-alert:hover 
+{
+   background-color: #883333;
+}
+
+input[type="color"],
+input[type="checkbox"]
+{
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+}
+
+input[type="color"]
+{
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+   padding: 5px;
+   width: 100px;
+   height: 40px;
+}
+
+input[type="checkbox"]
+{
+   display:inline-block;
+   width: 100px;
+   height: 40px;
+   margin: 5px;
+   background: url("../image/checkbox_x.svg") no-repeat;
+   background-size: 38px 38px;
+   background-position: center;
+   vertical-align: middle;
+   border: none;
+}
+
+input[type="checkbox"]:checked
+{
+   width: 100px;
+   background: url("../image/checkbox_v.svg") no-repeat;
+   background-size: 38px 38px;
+   background-position: center;
+}
+
+span
+{
+   text-align: center;
+   font-family: Verdana;
+   font-size: 20px;
+   font-weight: bold;
+}
+
+input[readonly]
+{
+   background-color: gray;
+   border: black solid 2px;
+}
+
+img 
+{
+   text-align: center;
+   margin: 2px;
+}
+
+button 
+{
+   text-align: center;
+   display: inline-block;
+   max-width: 150px;
+   font-family: Verdana;
+   font-size: 18px;
+   border: none;
+   background-color: transparent;
+   cursor: pointer;
+}
+
+button:hover 
+{
+   color: #0000AA;
+   -webkit-filter: drop-shadow(3px 3px 3px white);
+   filter: drop-shadow(3px 3px 3px white);
+}
+
+h1 
+{
+   display: inherit;
+   margin: auto;
+   text-align: center;
+   font-family: Verdana;
+   font-size: 40px;
+   -webkit-text-stroke-width: 2px;
+   -webkit-text-stroke-color: #bbbbbb;
+   color: #06446d;
+}
+
+h2 
+{
+   display: block;
+   margin-top: 5px;
+   text-align: center;
+   font-family: Verdana;
+   font-size: 22px;
+   color: inherit;
+}
+
+h3, label 
+{
+   display: block;
+   text-align: left;
+   font-family: Verdana;
+   font-size: 18px;
+   margin: 6px;
+}
+
+h4, small 
+{
+   display: none;
+   text-align: left;
+   font-family: Verdana;
+   font-size: 14px;
+   margin: 4px;
+}
+
+table,
+td,
+tr
+{
+   text-align: center;
+   vertical-align: middle;
+   align-items: center;
+   align-content: center;
+   font-family: Verdana;
+   font-size: 18px;
+   color: black;
+   border: none;
+}
+
+table
+{
+   display: table;
+   width: 100%;
+   overflow: auto;
+   border-collapse: collapse;
+}
+
+table.tab-menu td 
+{
+   max-width: 70px;
+   height: 125px;
+   padding: 5px;
+}
+
+table.tab-list thead
+{
+   font-weight: bold;
+   background-color: #07446D;
+}
+
+table.tab-list td
+{
+   height: 30px;
+}
+
+table.tab-list tr:nth-child(even)
+{
+   background-color: rgba(127,127,127,0.5);
+}
+
+table.tab-list select
+{
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+   background: url("../image/button_edit.svg") no-repeat;
+   background-size: 24px 24px;
+   background-position-x: center;
+   background-position-y: center;
+   background-color: transparent;
+   display: table-cell;
+   width: 36px;
+   height: 26px;
+   border: none;
+   cursor:context-menu;
+}
+
+table.form-tab input
+{
+   margin: auto;
+   width: 150px;
+}
+
+table.form-tab input[type="time"]
+{
+   text-align: center;
+}
+
+.alert,
+.alert-error,
+.alert-warning,
+.alert-ok 
+{
+   box-sizing: border-box;
+   display: block;
+   margin: 5px 0px;
+   padding: 10px 20px 10px 42px;
+   text-align: left;
+   font-family: Verdana;
+   font-size: 16px;
+   color: black;
+   -webkit-border-radius: 10px;
+   border-radius: 10px;
+   border: solid #555555 2px;
+   background-size: 32px;
+   background-position-x: left+6px;
+   background-position-y: center;
+   background-repeat: no-repeat;
+}
+
+.alert-error 
+{
+   background-color: rgba(255, 110, 110, 0.5);
+   background-image: url(../image/icn_error.svg);
+}
+
+.alert-warning 
+{
+   background-color: rgba(200, 200, 0, 0.8);
+   background-image: url(../image/icn_warning.svg);
+}
+
+.alert-ok 
+{
+   background-color: rgba(100, 170, 100, 0.6);
+   background-image: url(../image/icn_ok.svg);
+}
+
+.hidden 
+{
+   display: none;
+}
+
+@media (max-height: 700px) {
+   .h-responsive {
+      display: none;
+   }
+}

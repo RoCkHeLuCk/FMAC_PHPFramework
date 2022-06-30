@@ -1,0 +1,78 @@
+<form
+   method="post"
+   enctype="multipart/form-data"
+>
+
+   <img
+      height="150px"
+      width="150px"
+      src="public/image/logo2.png"
+      alt="logo"
+      class="h-responsive"
+   />
+
+   <h1>{$language['ResetTitle']}</h1>
+
+   <div>
+      <label>
+         *{$language['EmailLabel']}
+      </label>
+      <input
+         id="email"
+         maxlength="64"
+         name="email"
+         pattern="{$format['email']}"
+         placeholder="{$language['EmailHolder']}"
+         required="true"
+         type="email"
+      />
+      <div
+         id="emailAlert"
+         class="hidden"
+      />
+   </div>
+
+   <div>
+      <label>
+         *{$language['CxxxLabel']}
+      </label>
+      <input
+         id="cxxx"
+         maxlength="14"
+         name="cxxx"
+         oninput="ValidadeCxxx('cxxx','cxxxAlert');"
+         pattern="{$format['cxxx']}"
+         placeholder="{$language['CxxxHolder']}"
+         required="true"
+         type="text"
+      />
+      <div
+         id="cxxxAlert"
+         class="hidden"
+      />
+   </div>
+
+   <br />
+
+   <div>
+      <span>
+         <input
+            type="submit"
+            id="submit"
+            name="submit"
+            value="{$language['SendBtn']}"
+         />
+         <a
+            class="button"
+            href="./?pg=client/login&ac=login"
+         >
+            {$language['BackBtn']}
+         </a>
+      </span>
+      <div
+         id="submitAlert"
+         class="hidden"
+      >
+      </div>
+   </div>
+</form>

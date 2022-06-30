@@ -1,0 +1,70 @@
+<form
+   method="post"
+   enctype="multipart/form-data"
+>
+   <img
+      height="150px"
+      width="150px"
+      src="public/image/logo2.png"
+      alt="logo"
+      class="h-responsive"
+   />
+   <h1>{$language['ClientLoginTitle']}</h1>
+   <div>
+      <label for="cxxx"> *{$language['CxxxLabel']} </label>
+      <input
+         id="cxxx"
+         maxlength="14"
+         name="cxxx"
+         oninput="ValidadeCxxx('cxxx','cxxxAlert');"
+         pattern="{$format['cxxx']}"
+         placeholder="{$language['CxxxHolder']}"
+         required="true"
+         type="text"
+      />
+      <div
+         id="cxxxAlert"
+         class="hidden"
+      />
+   </div>
+   <div>
+      <label for="pswrd"> *{$language['PswrdLabel']} </label>
+      <input
+         id="pswrd"
+         maxlength="32"
+         name="pswrd"
+         oninput="ValidadePassword('pswrd','pswrdAlert')"
+         pattern="{$format['password']}"
+         placeholder="{$language['PswrdHolder']}"
+         required="true"
+         type="password"
+      />
+      <div
+         id="pswrdAlert"
+         class="hidden"
+      />
+   </div>
+   <br />
+   <div>
+      <input
+         type="submit"
+         id="submit"
+         name="submit"
+         value="{$language['EnterBtn']}"
+      />
+      <div
+         id="submitAlert"
+         class="hidden"
+      />
+   </div>
+   <div>
+      <a href="./?pg=client/login&ac=register">
+         <h2> {$language['RegisterBtn']} </h2>
+      </a>
+   </div>
+   <div>
+      <a href="./?pg=client/login&ac=reset">
+         <h2> {$language['ResetBtn']} </h2>
+      </a>
+   </div>
+</form>
