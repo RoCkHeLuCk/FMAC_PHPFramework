@@ -22,7 +22,7 @@ class TViewElement
 {
    protected const NAME_ID = 'id';
    protected const NAME_BLOCK = 'viewBlock';
-   protected const REPLACE_AMP = '/&(?!amp;)(?!#)/i';
+   protected const REPLACE_AMP = '/&(?!\w+;)(?!#[\dA-F]+;)/i';
 
    /**
     *   Pointer parentViewElement

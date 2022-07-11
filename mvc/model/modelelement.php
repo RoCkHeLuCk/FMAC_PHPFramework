@@ -110,6 +110,22 @@ class TModelElement extends TKernel
       return (($result) AND ($result->rowCount()));
    }
 
+
+   /**
+    * Execute sql and get last id
+    *
+    * @param string      $sql
+    * @param string|null $row
+    * @param boolean     $varDump
+    *
+    * @return integer
+    */
+   public function lastIdQuery(string $sql, ?string $row = NULL, bool $varDump = false) : int
+   {
+      $this->boolQuery($sql, $varDump);
+      return $this->getPDOElement()->lastInsertId($row);
+   }
+
    /**
     *   One occurrence query
     *

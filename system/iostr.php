@@ -1,17 +1,33 @@
 <?php
 
+define(
+   'HTML_ENTITIES_TAB',
+   [
+      '"'  => '&#34;',
+      '$'  => '&#36;',
+      '&'  => '&#38;',
+      '\'' => '&#39;',
+      '/'  => '&#47;',
+      '<'  => '&#60;',
+      '>'  => '&#62;',
+      '\\' => '&#92;',
+      '`'  => '&#96;',
+      '{'  => '&#123;',
+      '}'  => '&#125;',
+   ]
+);
+
 /**
- * Convert All character to HTML Entities
+ * Convert characters to HTML Entities
  *
- * @param string  &$text
+ * @param string  $text
  * @param boolean $trim
  *
  * @return string
  */
 function strEncHTML(string $text, bool $trim = true) : string
 {
-   $text = htmlentities($text, ENT_QUOTES | ENT_SUBSTITUTE | ENT_XML1);
-   $text = str_replace(['/','\\'],['&#47;','&#92;'], $text);
+   $text = strtr($text, HTML_ENTITIES_TAB);
    if ($trim)
    {
       $text = trim(preg_replace('/\s+/',' ', $text));
@@ -19,6 +35,15 @@ function strEncHTML(string $text, bool $trim = true) : string
    return $text;
 }
 
+/**
+ * Convert All character in Array to HTML Entities.
+ *
+ * @param array   &$array
+ * @param bool    $trim
+ * @param string  ...$keys
+ *
+ * @return void
+ */
 function arrayEncHTML(array &$array, bool $trim = true, string ...$keys) : void
 {
    if ($keys)
