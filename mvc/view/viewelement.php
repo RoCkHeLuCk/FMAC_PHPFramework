@@ -467,8 +467,10 @@ class TViewElement
 
       $id = in_array('id', $this->BlockOptions);
       $node = in_array('nodes', $this->BlockOptions);
+      $attribute = in_array('attributes', $this->BlockOptions);
+      $self = in_array('self', $this->BlockOptions);
 
-      if ($id OR $node)
+      if ($id OR $node OR $attribute)
       {
          $XMLChilds = $XMLNewElement->getElementsByTagName('*');
          if($XMLChilds)
@@ -476,35 +478,43 @@ class TViewElement
          {
             if ($XMLChilds[$c] instanceof DOMElement)
             {
-               if ($id
-               AND !$XMLChilds[$c]->hasAttribute(TViewElement::NAME_ID))
+               //remove ID
+               if ($id AND !$XMLChilds[$c]->hasAttribute(TViewElement::NAME_ID))
                {
                   $XMLChilds[$c]->removeAttribute(TViewElement::NAME_ID);
                }
 
-               if ($node
-               AND !$XMLChilds[$c]->hasChildNodes())
+               //remove empty node
+               if ($node AND !$XMLChilds[$c]->hasChildNodes())
                {
                   $XMLChilds[$c]->parentNode->removeChild($XMLChilds);
+               }
+
+               //remove empty attributes
+               if(($attribute) AND ($XMLChilds[$c]->attributes))
+               for ($d = $XMLChilds[$c]->attributes->length-1; $d >= 0; $d--)
+               {
+                  if ($XMLChilds[$c]->attributes[$d]->value == '')
+                  {
+                     $XMLChilds[$c]->removeAttribute(
+                        $XMLChilds[$c]->attributes[$d]->name);
+                  }
                }
             }
          }
       }
 
-      if (in_array('attributes', $this->BlockOptions))
+      if($self AND $attribute AND $XMLNewElement->attributes)
+      for ($c = $XMLNewElement->attributes->length-1; $c >= 0; $c--)
       {
-         if($XMLNewElement->attributes)
-         for ($c = $XMLNewElement->attributes->length-1; $c >= 0; $c--)
+         if ($XMLNewElement->attributes[$c]->value == '')
          {
-            if ($XMLNewElement->attributes[$c]->value == '')
-            {
-               $XMLNewElement->removeAttribute(
-                  $XMLNewElement->attributes[$c]->name);
-            }
+            $XMLNewElement->removeAttribute(
+               $XMLNewElement->attributes[$c]->name);
          }
       }
 
-      if (in_array('self', $this->BlockOptions))
+      if ($self)
       {
          if (!$XMLNewElement->hasChildNodes())
          {
