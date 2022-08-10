@@ -504,7 +504,7 @@ class TViewElement
          }
       }
 
-      if($self AND $attribute AND $XMLNewElement->attributes)
+      if($attribute AND $XMLNewElement->attributes)
       for ($c = $XMLNewElement->attributes->length-1; $c >= 0; $c--)
       {
          if ($XMLNewElement->attributes[$c]->value == '')
