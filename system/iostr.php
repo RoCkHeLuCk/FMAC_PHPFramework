@@ -1,5 +1,29 @@
 <?php
 
+/**
+ * insert Quote in string
+ *
+ * @param string  $value
+ *
+ * @return string
+ */
+function addQuote(string $value) : string
+{
+   return "'".$value."'";
+}
+
+/**
+ * insert Doble Quote in string
+ *
+ * @param string  $value
+ *
+ * @return string
+ */
+function addDQuote(string $value) : string
+{
+   return '"'.$value.'"';
+}
+
 define(
    'HTML_ENTITIES_TAB',
    [
@@ -123,7 +147,7 @@ function strRand(int $length) : string
  *   @param    array          $prefix
  *   @return   string                   number is formatted
  */
-function numberPrefix(int $value, bool $bit = false,
+function numberPrefix($value, bool $bit = false,
    array $prefix = array('', 'k', 'M', 'G', 'T', 'P')) : string
 {
    $bit = $bit?1024:1000;
@@ -132,7 +156,6 @@ function numberPrefix(int $value, bool $bit = false,
    $value /= pow($bit, $pow);
    return  round($value,3) . ' ' . $prefix[$pow];
 }
-
 
 /**
 *   replaces all variables within the document

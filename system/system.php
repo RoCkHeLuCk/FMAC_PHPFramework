@@ -1,14 +1,15 @@
 <?php
+
 /**
  *   tests if multiple elements of the same level exist
  *   in an array
  *
- *   @method   issets
+ *   @method   issets_r
  *   @param    array   $array
- *   @param    string   $keys
+ *   @param    array   $keys
  *   @return   bool
  */
-function issets(?array $array, string ...$keys) : bool
+function issets_r(?array $array, array $keys) : bool
 {
    if ((!$array) OR (!$keys))
    {
@@ -27,6 +28,20 @@ function issets(?array $array, string ...$keys) : bool
 }
 
 /**
+ *   tests if multiple elements of the same level exist
+ *   in an array
+ *
+ *   @method   issets
+ *   @param    array   $array
+ *   @param    string   $keys
+ *   @return   bool
+ */
+function issets(?array $array, string ...$keys) : bool
+{
+   return issets_r($array, $keys);
+}
+
+/**
  *   test if an element in element, recursive an array exists
  *
  *   @method   isset_recursive
@@ -42,9 +57,18 @@ function isset_recursive_r(?array $array, array $keys) : bool
    }
 
    $key = array_shift($keys);
-   if (!array_key_exists($key,$array))
+
+   if (is_array($key))
    {
-      return false;
+      if (!issets_r($array, $key))
+      {
+         return false;
+      }
+   } else {
+      if (!array_key_exists($key,$array))
+      {
+         return false;
+      }
    }
 
    if (!$keys)
@@ -65,10 +89,10 @@ function isset_recursive_r(?array $array, array $keys) : bool
  *
  *   @method   isset_recursive
  *   @param    array            $array
- *   @param    string            $keys
+ *   @param    string | array   $keys
  *   @return   bool
  */
-function isset_recursive(?array $array, string ...$keys) : bool
+function isset_recursive(?array $array, ...$keys) : bool
 {
    return isset_recursive_r($array, $keys);
 }
@@ -91,6 +115,55 @@ function ifset(?array $array, string $key, $unset = NULL)
       return $unset;
    }
    return (array_key_exists($key,$array)?$array[$key]:$unset);
+}
+
+/**
+ *   test if an element in multi array,
+ *   exists and returns its value in first array,
+ *   if it does not return $unset
+ *
+ *   @method   ifset_multi
+ *   @param    mixed            $unset
+ *   @param    array            $keys
+ *   @param    array            ...$arrays
+ *   @return   mixed
+ */
+function ifset_multi($unset, string $key, ?array ...$arrays)
+{
+   if ($arrays)
+   {
+      foreach ($arrays as $arrayValue)
+      {
+         if (($arrayValue) AND (array_key_exists($key,$arrayValue)))
+         {
+            return $arrayValue[$key];
+         }
+      }
+   }
+   return $unset;
+}
+
+/**
+ *   find first array is not empty and return it,
+ *   if it does not return array empty
+ *
+ *   @method   ifset_array
+ *   @param    array        ...$arrays
+ *   @return   array
+ */
+function ifset_array(?array ...$arrays) : array
+{
+   if ($arrays)
+   {
+      foreach ($arrays as $arrayValue)
+      {
+         if ($arrayValue)
+         {
+            return $arrayValue;
+         }
+      }
+   }
+   return array();
 }
 
 /**
@@ -134,12 +207,12 @@ function ifset_recursive_r(?array $array, array $keys, $unset = NULL)
  *   exists and returns its value if it does not return $unset
  *
  *   @method   ifset_recursive
- *   @param    array            $array
  *   @param    mixed            $unset
+ *   @param    array            $array
  *   @param    string           $keys...
  *   @return   mixed
  */
-function ifset_recursive(?array $array, $unset = NULL, string ...$keys)
+function ifset_recursive($unset, ?array $array, string ...$keys)
 {
    return ifset_recursive_r($array, $keys, $unset);
 }

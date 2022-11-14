@@ -14,15 +14,18 @@ use FMAC\MVC\View\TViewAttribute;
  *
  *   manipulate a properly formatted DOMElement
  *
- *   @property TViewElement $id of element
- *   @property-read TViewElement $id of element
- *   @property-write TViewElement $id of element
  */
 class TViewElement
 {
+   protected const NAME_NEWID = 'newID';
    protected const NAME_ID = 'id';
    protected const NAME_BLOCK = 'viewBlock';
    protected const REPLACE_AMP = '/&(?!\w+;)(?!#[\dA-F]+;)/i';
+
+   /**
+    *  name of element, attribute NAME_ID
+    */
+   protected string $IDViewElement;
 
    /**
     *   Pointer parentViewElement
@@ -58,18 +61,18 @@ class TViewElement
     *   @param    TViewElement  $parentViewElement
     *   @param    DOMElement    $XMLElement
     */
-   protected function __construct(?TViewElement $parentViewElement,
-      DOMElement $XMLElement)
+   protected function __construct(?TViewElement $parentViewElement, DOMElement $XMLElement, string $id = '')
    {
+      $this->IDViewElement = $id;
       if (!is_null($parentViewElement))
       {
          $this->parentViewElement = $parentViewElement;
       }
+
       $this->XMLElement = $XMLElement;
       if ($XMLElement->hasAttribute(TViewElement::NAME_BLOCK))
       {
-         $this->BlockOptions =
-            explode(' ', $XMLElement->getAttribute(TViewElement::NAME_BLOCK));
+         $this->BlockOptions = explode(' ', $XMLElement->getAttribute(TViewElement::NAME_BLOCK));
       }
       $this->__refresh();
    }
@@ -136,9 +139,8 @@ class TViewElement
       {
          if($XMLElement->hasAttribute(TViewElement::NAME_ID))
          {
-            $this->ViewElementList[
-               $XMLElement->getAttribute(TViewElement::NAME_ID)] =
-                  new TViewElement($this, $XMLElement);
+            $name = $XMLElement->getAttribute(TViewElement::NAME_ID);
+            $this->ViewElementList[$name] = new TViewElement($this, $XMLElement, $name);
          }
       }
    }
@@ -180,7 +182,18 @@ class TViewElement
     */
    public function hasElement(string $id) : bool
    {
-      return array_key_exists($id,$this->ViewElementList);
+      return array_key_exists($id, $this->ViewElementList);
+   }
+
+   /**
+    *   get getIDElement
+    *
+    *   @method   getIDElement
+    *   @return   string
+    */
+   public function getIDElement() : string
+   {
+      return $this->IDViewElement;
    }
 
    /**
@@ -200,10 +213,39 @@ class TViewElement
     *   @method   getXMLDocument
     *   @return   DOMDocument
     */
-    public function getXMLDocument() : DOMDocument
-    {
-       return $this->XMLElement->ownerDocument;
-    }
+   public function getXMLDocument() : DOMDocument
+   {
+      return $this->XMLElement->ownerDocument;
+   }
+
+   /**
+    *   Remove the element by List Only
+    *
+    *   @method   removeChild
+    */
+   protected function removeChild( string $id ) : void
+   {
+      if ($this->hasElement($id))
+      {
+         unset($this->ViewElementList[$id]);
+      }
+   }
+
+
+   /**
+    *   Deletes the element by id
+    *
+    *   @method   deleteChild
+    */
+   public function deleteChild( string $id ) : void
+   {
+      if ($this->hasElement($id))
+      {
+         $XMLElementChild = $this->ViewElementList[$id]->getXMLElement();
+         $XMLElementChild->remove();
+         unset($this->ViewElementList[$id]);
+      }
+   }
 
 
    /**
@@ -213,9 +255,18 @@ class TViewElement
     */
    public function deleteMe() : void
    {
-      $this->XMLElement->parentNode
-         ->removeChild($this->XMLElement);
-      unset($this->XMLElement);
+      $this->parentViewElement->deleteChild($this->IDViewElement);
+      //$this->XMLElement->parentNode->removeChild($this->XMLElement);
+
+      //$this->parentViewElement->removeChild($this->IDViewElement);
+      //$this->XMLElement->remove();
+
+      //unset($this->XMLElement);
+
+      // if (isset($this->parentViewElement))
+      // {
+      //    $this->parentViewElement->__refresh();
+      // }
    }
 
    /**
@@ -226,12 +277,14 @@ class TViewElement
    public function cleanMe() : void
    {
       if ($this->XMLElement->childNodes)
-      for ($i = $this->XMLElement->childNodes->length-1; $i >= 0; $i--)
       {
-         $value = $this->XMLElement->childNodes[$i];
-         $value->parentNode->removeChild($value);
+         for ($i = $this->XMLElement->childNodes->length-1; $i >= 0; $i--)
+         {
+            $value = $this->XMLElement->childNodes[$i];
+            $value->parentNode->removeChild($value);
+         }
       }
-      $this->__refresh();
+      $this->ViewElementList = array();
    }
 
    /**
@@ -242,13 +295,31 @@ class TViewElement
     *                           only be modified
     *                           by this return
     */
-   public function cloneMe() : TViewElement
+   public function cloneMe(string $id = '') : TViewElement
    {
       $XMLClone = $this->XMLElement->cloneNode(true);
       $this->cleanBlockElement($XMLClone);
-      $this->XMLElement->parentNode->
-         insertBefore($XMLClone, $this->XMLElement);
-      return new TViewElement($this->parentViewElement, $XMLClone);
+      $this->XMLElement->parentNode->insertBefore($XMLClone, $this->XMLElement);
+      $result = new TViewElement($this->parentViewElement, $XMLClone, $id);
+      if ($id)
+      {
+         $this->XMLElement->setAttribute(TViewElement::NAME_ID, $id);
+         $this->parentViewElement->insertViewElement($result);
+      }
+      return $result;
+   }
+
+   /**
+    *    Insert ViewElement
+    *
+    *    @method insertViewElement
+    *    @param TViewElement $viewElement
+    *    @return void
+    *
+    */
+   protected function insertViewElement(TViewElement $viewElement)
+   {
+      $this->ViewElementList[$viewElement->IDViewElement] = $viewElement;
    }
 
    /**
@@ -380,6 +451,10 @@ class TViewElement
       {
          $this->XMLElement->parentNode->
             insertBefore($XMLNewElement,$this->XMLElement);
+         if (isset($this->parentViewElement))
+         {
+            $this->parentViewElement->__refresh();
+         }
       }
    }
 
@@ -415,6 +490,10 @@ class TViewElement
             $this->XMLElement->parentNode->
                insertBefore($XMLNewElement,$this->XMLElement);
          }
+      }
+      if (isset($this->parentViewElement))
+      {
+         $this->parentViewElement->__refresh();
       }
    }
 
@@ -521,6 +600,13 @@ class TViewElement
             $XMLNewElement->parentNode->removeChild($XMLNewElement);
             $XMLNewElement = NULL;
          }
+      }
+
+      if ($XMLNewElement AND $XMLNewElement->hasAttribute(TViewElement::NAME_NEWID) )
+      {
+         $newID = $XMLNewElement->getAttribute(TViewElement::NAME_NEWID);
+         $XMLNewElement->setAttribute(TViewElement::NAME_ID, $newID);
+         $XMLNewElement->removeAttribute(TViewElement::NAME_NEWID);
       }
    }
 

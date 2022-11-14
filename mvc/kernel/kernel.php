@@ -16,10 +16,16 @@ class TKernel
    protected string $classNamespace;
 
    /**
+   *    APP Path location
+   *    @var string
+   */
+   protected static string $appPathLocation = '';
+
+   /**
    *    Path location
    *    @var string
    */
-   protected string $pathLocation = '';
+   protected string $classPathLocation = '';
 
    /**
    *   Define Variable List MVC
@@ -90,7 +96,37 @@ class TKernel
          {
             echo "TKernel ERROR: Variable ou method ($name) no found";
          }
-      } 
+      }
+   }
+
+   /**
+   *   parse current or define Namespace
+   *
+   *   @method   parseNS
+   *   @param    int $historic
+   *   @param    string $ns
+   *   @return   string
+   */
+   protected function urlNamespace(int $historic = 0):string
+   {
+      static $result = '';
+
+      if (!$historic)
+      {
+         if ( empty($result) )
+         {
+            $namespace = preg_split('/\\\/', $this->classNamespace, -1, PREG_SPLIT_NO_EMPTY);
+            $result = implode('/',$namespace);
+         }
+         return $result;
+      } else {
+         $namespace = preg_split('/\\\/', $this->classNamespace, -1, PREG_SPLIT_NO_EMPTY);
+         for ($i=0; $i > $historic; $i--)
+         {
+            array_pop($namespace);
+         }
+         return implode('/',$namespace);
+      }
    }
 }
 

@@ -1,6 +1,7 @@
 <?php
 namespace FMAC\MVC;
 require_once(__DIR__.'/kernel/kernel.php');
+require_once(__DIR__.'/model.php');
 require_once(__DIR__.'/view.php');
 use FMAC\MVC\Kernel\TKernel;
 use ReflectionClass;
@@ -20,6 +21,10 @@ abstract class TController extends TKernel
    */
    private array $ctrlList = array();
 
+   protected bool $toConstruct = true;
+   protected bool $toDestruct = true;
+   protected string $actionDefault = '';
+
    /**
    *   Define PRIVILEGES Bitwise
    *   @var   int
@@ -31,12 +36,6 @@ abstract class TController extends TKernel
    *   @var   int
    */
    private static int $errorCode = 0;
-
-   /**
-   *    function execute class
-   *    @method mixed execute()
-   */
-   abstract public function execute();
 
    /**
    *   set global Variable in TController
@@ -95,23 +94,23 @@ abstract class TController extends TKernel
                return $this->ctrlList['View'];
             }break;
 
-            case 'toConstruct':
-            {
-               if (!isset($this->ctrlList['toConstruct']))
-               {
-                  $this->ctrlList['toConstruct'] = true;
-               }
-               return $this->ctrlList['toConstruct'];
-            }
+            // case 'toConstruct':
+            // {
+            //    if (!isset($this->ctrlList['toConstruct']))
+            //    {
+            //       $this->ctrlList['toConstruct'] = true;
+            //    }
+            //    return $this->ctrlList['toConstruct'];
+            // }
 
-            case 'toDestruct':
-            {
-               if (!isset($this->ctrlList['toDestruct']))
-               {
-                  $this->ctrlList['toDestruct'] = true;
-               }
-               return $this->ctrlList['toDestruct'];
-            }
+            // case 'toDestruct':
+            // {
+            //    if (!isset($this->ctrlList['toDestruct']))
+            //    {
+            //       $this->ctrlList['toDestruct'] = true;
+            //    }
+            //    return $this->ctrlList['toDestruct'];
+            // }
 
             default:
             {
@@ -193,61 +192,6 @@ abstract class TController extends TKernel
    }
 
    /**
-   * Load Action
-   * @method bool loadAction()
-   * @param string $method
-   * @param  mixed ...$params
-   * @return mixed
-   */
-   protected function loadAction(string $method, ...$params)
-   {
-      if (method_exists($this, $method))
-      {
-         $refMethod = new ReflectionMethod($this->className, $method);
-         if (($refMethod->isPublic())
-         or ($method[0] != '_'))
-         {
-            if (!TController::$errorCode)
-            {
-               $attrib = TController::getAttribute($refMethod);
-               if (TController::testPrivilege($attrib, $this->className.'->'.$method))
-               {
-                  $viewFile = array_key_exists('view',$attrib)?$attrib['view']:$method.'.html';
-                  if ($viewFile[0] == '.')
-                  {
-                     $fileName = __BASEDIR__.substr($viewFile, 1);
-                  } else {
-                     $fileName = $this->pathLocation.'/_view/'.$viewFile;
-                  }
-
-                  if (file_exists($fileName))
-                  {
-                     $this->ctrlList['View'] = new TView();
-                     $this->ctrlList['View']->loadFile($fileName);
-                  }
-                  return $refMethod->invokeArgs($this, $params);
-               }
-            }
-         } else {
-            if (isDebug())
-            {
-               echo "TController ERROR: Method ($this->className
-                  ->$method) is not public or blocked";
-            }
-            TController::$errorCode = 403;
-         }
-      } else {
-         if (isDebug())
-         {
-            echo "TController ERROR: Method ($this->className
-               ->$method) don't found";
-         }
-         TController::$errorCode = 404;
-      }
-      return NULL;
-   }
-
-   /**
    *   set privilege Controller access Bitwise
    *
    *   @method   setPrivilege
@@ -325,55 +269,96 @@ abstract class TController extends TKernel
       return true;
    }
 
-   /**
-    *   load Controller and namespace respectives and
-    *   execute last method "action"
-    *   @method   autoLoad
-    *   @param    string           $appPath
-    *   @param    string           $cntrl
-    *   @param    string           $action
-    */
-   public static function autoLoad(string $appPath, string $cntrl, string $action = '') : void
+   private static function loadStruct(array $pathArray, string $page, string $action, bool $toConstruct = true, bool $toDestruct = true, ...$params)
    {
-      $pathArray = array();
-      preg_match_all('/\w+/i', $cntrl, $pathArray);
-
-      $cntrl = '';
+      $result = NULL;
       $ctrlArray = array();
-      while ((!TController::$errorCode) AND ($pathArray[0]))
+      while ((!TController::$errorCode) AND ($pathArray))
       {
-         $ctrlArray[] =
-            TController::loadController($appPath, $cntrl, $action, true, false, true);
-         $cntrl .= '/'.array_shift($pathArray[0]);
+         $ctrlArray[] = TController::loadMVC($page, true, true);
+         $page .= '/'.array_shift($pathArray);
       }
 
-      TController::loadController($appPath, $cntrl, $action, true, true, true);
+      if (!TController::$errorCode)
+      {
+         $ctrlLast = $ctrlArray[] = TController::loadMVC($page, $toConstruct, $toDestruct);
+         if ($ctrlLast)
+         {
+            $action = $action?$action:$ctrlLast->actionDefault;
+            $result = $ctrlLast->loadAction($action, ...$params);
+         } else {
+            if (isDebug())
+            {
+               echo "TController ERROR: File ($page/controller.php) don't found";
+            }
+            TController::$errorCode = 404;
+         }
+      }
 
       while ($ctrlArray)
       {
-         array_pop($ctrlArray);
+         $ctrlLast = array_pop($ctrlArray);
+         if ($ctrlLast)
+         {
+            unset($ctrlLast);
+         }
       }
+      return $result;
    }
 
    /**
-    * load Controller and namespace and
-    * execute method "action" if $toExecute is true
-    *
-    * @author	Franco Michel Almeida Caixeta
-    * @access	public static
-    * @param	string 	$appPath
-    * @param	string 	$page
-    * @param	string 	$action
-    * @param	boolean	$toConstruct     Execute method Construct
-    * @param	boolean	$toExecute       Execute method Action
-    * @param	boolean	$toDestruct      Execute method Destruct
-    * @param	mixed  	...$params       Send parameter method Action
-    * @return	mixed                     method Action return or action not execute controller return
+    *   load Controller and namespace respective and
+    *   execute last method "action"
+    *   @method   loadApp
+    *   @param    string           $appPath
+    *   @param    string           $page
+    *   @param    string           $action
     */
-   public static function loadController(string $appPath, string $page = '', string $action = '',
-      bool $toConstruct = true, bool $toExecute = true, bool $toDestruct = true, ...$params)
+   public static function loadApp(string $appPath, string $page = '', string $action = '', ...$params) : void
    {
-      $path = $appPath.$page;
+      TKernel::$appPathLocation = str_replace('\\','/',$appPath);
+      $pathArray = preg_split('/[\/\\\]/', $page, -1, PREG_SPLIT_NO_EMPTY);
+      $page = '';
+      TController::loadStruct($pathArray, $page, $action, true, true, ...$params);
+   }
+
+   /**
+    *   load namespace respective and
+    *   execute last method "action"
+    *   @method   loadNS
+    *   @param    string           $appPath
+    *   @param    string           $page
+    *   @param    string           $action
+    */
+   protected function loadController(string $page, string $action = '', bool $toConstruct = true, bool $toDestruct = true, ...$params)
+   {
+      $namespace = explode('\\',$this->classNamespace);
+
+      $pathArray = preg_split('/[\/\\\]/', $page, -1, PREG_SPLIT_NO_EMPTY);
+      $page = '';
+      foreach ($namespace as $value)
+      {
+         if ($value == $pathArray[0])
+         {
+            $page .= '/'.$value;
+            array_shift($pathArray);
+         }
+      }
+      $page .= '/'.array_shift($pathArray);
+      return TController::loadStruct($pathArray, $page, $action, $toConstruct, $toDestruct, ...$params);
+   }
+
+   /**
+    * load Controller and namespace
+    *
+    * @param	string 	$page
+    * @param	boolean	$toConstruct     Execute method Construct
+    * @param	boolean	$toDestruct      Write if Execute method Destruct
+    * @return	?TController               Controller return
+    */
+   private static function loadMVC(string $page = '', bool $toConstruct = true, bool $toDestruct = true) : ?TController
+   {
+      $path = TKernel::$appPathLocation . $page;
       $fileCtrl = $path.'/controller.php';
       $namespace = str_replace( '/', '\\', $page);
 
@@ -392,10 +377,10 @@ abstract class TController extends TKernel
             $controller = $refCtrl->newInstanceWithoutConstructor();
             $controller->className = $ctrlClass;
             $controller->classNamespace = $namespace;
-            $controller->pathLocation = $path;
+            $controller->classPathLocation = $path;
             $controller->toConstruct = $toConstruct;
-            $controller->toExecute = $toExecute;
             $controller->toDestruct = $toDestruct;
+            $controller->actionDefault = ifset($attrib, 'action', 'execute');
 
             $fileModel = $path.'/model.php';
             if (file_exists($fileModel))
@@ -420,11 +405,6 @@ abstract class TController extends TKernel
                $controller->loadAction('__construct');
             }
 
-            if ($toExecute)
-            {
-               $action = ($action)?$action:'execute';
-               return $controller->loadAction($action, ...$params);
-            }
             return $controller;
          } else {
             if (isDebug())
@@ -433,11 +413,62 @@ abstract class TController extends TKernel
             }
             TController::$errorCode = 404;
          }
+      }
+      return NULL;
+   }
+
+   /**
+   * Load Action
+   * @method bool loadAction()
+   * @param string $action       name action.
+   * @param  mixed ...$params    Params to action.
+   * @return mixed               Return action return.
+   */
+   protected function loadAction(string $action, ...$params)
+   {
+      if (method_exists($this, $action))
+      {
+         $refMethod = new ReflectionMethod($this->className, $action);
+         $this->action = $action;
+
+         if (($refMethod->isPublic())
+         AND (($action == '__construct') OR ($action == '_destruct') OR ($action[0] != '_')))
+         {
+            if (!TController::$errorCode)
+            {
+               $attrib = TController::getAttribute($refMethod);
+               if (TController::testPrivilege($attrib, $this->className.'->'.$action))
+               {
+                  $viewFile = ifset($attrib, 'view', $action.'.html');
+                  if ($viewFile[0] == '.')
+                  {
+                     $fileName = __BASEDIR__.substr($viewFile, 1);
+                  } else {
+                     $fileName = $this->classPathLocation.'/_view/'.$viewFile;
+                  }
+
+                  if (file_exists($fileName))
+                  {
+                     $this->ctrlList['View'] = new TView();
+                     $this->ctrlList['View']->loadFile($fileName);
+                  }
+                  return $refMethod->invokeArgs($this, $params);
+               }
+            }
+         } else {
+            if (isDebug())
+            {
+               echo "TController ERROR: Method ($this->className
+                  ->$action) is not public or blocked";
+            }
+            TController::$errorCode = 403;
+         }
       } else {
          if (isDebug())
-   	   {
-   	      echo "TController ERROR: File ($fileCtrl) don't found";
-   	   }
+         {
+            echo "TController ERROR: Method ($this->className
+               ->$action) don't found";
+         }
          TController::$errorCode = 404;
       }
       return NULL;
@@ -468,6 +499,5 @@ abstract class TController extends TKernel
 
       return $result;
    }
-
 }
 ?>

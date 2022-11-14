@@ -2,7 +2,7 @@
 require_once('system.php');
 
 /**
- *   set DEBUG is enable
+ *   set DEBUG
  *
  *   @var   boolean
  */
@@ -19,7 +19,10 @@ function setDebug(bool $enabled) : void
    $GLOBALS['DEBUG'] = $enabled;
    if ( $enabled )
    {
-      opcache_reset();
+      if (function_exists('opcache_reset'))
+      {
+         opcache_reset();
+      }
       error_reporting(E_ALL);
       ini_set('display_errors', true);
       ini_set('html_errors', true);
@@ -30,7 +33,7 @@ function setDebug(bool $enabled) : void
       // ini_set('xdebug.collect_vars', '1');
       // ini_set('xdebug.collect_params', '4');
       // ini_set('xdebug.show_local_vars','1');
-      // ini_set('xdebug.var_display_max_depth', '10');
+      ini_set('xdebug.var_display_max_depth', '10');
       // ini_set('xdebug.var_display_max_children', '256');
       // ini_set('xdebug.var_display_max_data', '256');
       // ini_set('xdebug.cli_color','1');
@@ -38,7 +41,6 @@ function setDebug(bool $enabled) : void
       error_reporting(0);
       ini_set("display_errors", false);
       ini_set("html_errors", false);
-
       // ini_set('xdebug.force_display_errors','0');
       // ini_set('xdebug.show_error_trace','0');
       // ini_set('xdebug.show_exception_trace','0');
@@ -49,6 +51,8 @@ function setDebug(bool $enabled) : void
       // ini_set('xdebug.var_display_max_children', '256');
       // ini_set('xdebug.var_display_max_data', '256');
       // ini_set('xdebug.cli_color','0');
+      // ini_set('xdebug.remote_autostart','0');
+      // ini_set('xdebug.remote_enable','0');
    }
 }
 

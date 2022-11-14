@@ -107,7 +107,12 @@ class TModelElement extends TKernel
    public function boolQuery(string $sql, bool $varDump = false) : bool
    {
       $result = $this->allQuery($sql,$varDump);
-      return (($result) AND ($result->rowCount()));
+      $result = (($result) AND ($result->rowCount()));
+      if ($varDump)
+      {
+         echo('<br/>RESULT: '.$result?'true':'false'.'<br/>');
+      }
+      return $result;
    }
 
 
@@ -123,23 +128,41 @@ class TModelElement extends TKernel
    public function lastIdQuery(string $sql, ?string $row = NULL, bool $varDump = false) : int
    {
       $this->boolQuery($sql, $varDump);
-      return $this->getPDOElement()->lastInsertId($row);
+      $result = $this->getPDOElement()->lastInsertId($row);
+      if ($varDump)
+      {
+         echo('<br/>RESULT ['.$row.']: '.$result.'<br/>');
+      }
+      return $result;
    }
 
    /**
     *   One occurrence query
     *
     *   @method   oneQuery
-    *   @param    string    $sql
-    *   @param    bool      $varDump
-    *   @return   array     one level
+    *   @param    string       $sql
+    *   @param    string|null  $row
+    *   @param    bool         $varDump
+    *   @return   array|string Array one level or string Row
     */
-   public function oneQuery(string $sql, bool $varDump = false) : array
+   public function oneQuery(string $sql, ?string $row = NULL, bool $varDump = false)
    {
       $result = $this->query($sql, $varDump);
       if ($result)
       {
-         return reset($result);
+         $result = reset($result);
+         if ($row AND isset($result,$row))
+         {
+            $result = $result[$row];
+         }
+
+         if ($varDump)
+         {
+            echo('<br/>RESULT:<pre>');
+            print_r($result);
+            echo('</pre><br/>');
+         }
+         return $result;
       } else
          return array();
    }
@@ -159,7 +182,14 @@ class TModelElement extends TKernel
       $result = $this->allQuery($sql, $varDump);
       if ($result)
       {
-         return $result->fetchAll($fetch);
+         $result = $result->fetchAll($fetch);
+         if ($varDump)
+         {
+            echo('<br/>RESULT:<pre>');
+            print_r($result);
+            echo('</pre><br/>');
+         }
+         return $result;
       }
       return array();
    }
@@ -178,17 +208,11 @@ class TModelElement extends TKernel
       {
          if ($varDump)
          {
-            echo('<br/>SQL:');
+            echo('<br/>SQL:<pre>');
             echo($sql);
-            echo('<br/>');
+            echo('</pre><br/>');
          }
          $result = $this->getPDOElement()->query($sql);
-         if ($varDump)
-         {
-            echo('<br/>Result:');
-            var_dump($result);
-            echo('<br/>');
-         }
       } catch (PDOException $th) {
          TModelElement::$errorMessage = $th->getMessage();
          if (isDebug())
