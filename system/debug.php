@@ -33,10 +33,14 @@ function setDebug(bool $enabled) : void
       // ini_set('xdebug.collect_vars', '1');
       // ini_set('xdebug.collect_params', '4');
       // ini_set('xdebug.show_local_vars','1');
-      ini_set('xdebug.var_display_max_depth', '10');
+      // ini_set('xdebug.var_display_max_depth', '10');
       // ini_set('xdebug.var_display_max_children', '256');
       // ini_set('xdebug.var_display_max_data', '256');
       // ini_set('xdebug.cli_color','1');
+
+      header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+      header("Cache-Control: post-check=0, pre-check=0", false);
+      header("Pragma: no-cache");
    }else{
       error_reporting(0);
       ini_set("display_errors", false);

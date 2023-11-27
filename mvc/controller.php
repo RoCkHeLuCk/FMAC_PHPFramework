@@ -4,6 +4,7 @@ require_once(__DIR__.'/kernel/kernel.php');
 require_once(__DIR__.'/model.php');
 require_once(__DIR__.'/view.php');
 use FMAC\MVC\Kernel\TKernel;
+use FMAC\MVC\TModel;
 use ReflectionClass;
 use ReflectionProperty;
 use ReflectionMethod;
@@ -20,7 +21,6 @@ abstract class TController extends TKernel
    *   @var  array
    */
    private array $ctrlList = array();
-
    protected bool $toConstruct = true;
    protected bool $toDestruct = true;
    protected string $actionDefault = '';
@@ -37,6 +37,29 @@ abstract class TController extends TKernel
    */
    private static int $errorCode = 0;
 
+
+   function flowField(array &$flowArray, ...$field): bool
+   {
+      $result = true;
+      foreach ($field as $nameField => $callField) {
+         $param = array();
+         $param[] = $nameField;
+         $param[] = &$flowArray;
+         $param[] = $this->View;
+         foreach ($callField as $functionField => $parameterField) {
+            if (function_exists($functionField)) {
+               $parameterField = array_merge($param, $parameterField);
+               $result &= call_user_func_array($functionField, $parameterField);
+            } else {
+               if (isDebug()) {
+                  echo "TKernel flowField ERROR: Function ($functionField) no found.";
+               }
+            }
+         }
+      }
+      return $result;
+   }
+
    /**
    *   set global Variable in TController
    *
@@ -47,7 +70,7 @@ abstract class TController extends TKernel
    */
    public function __set(string $name, $value) : void
    {
-      if ($name[0] == '_')
+      if (substr($name,0,1) == '_')
       {
          parent::__set($name, $value);
       } else {
@@ -138,7 +161,7 @@ abstract class TController extends TKernel
    */
    public function __isset($name) : bool
    {
-      if ($name[0] == '_')
+      if (substr($name,0,1) == '_')
       {
          return parent::__isset($name);
       } else {
@@ -155,7 +178,7 @@ abstract class TController extends TKernel
    */
    public function __unset($name) : void
    {
-      if ($name[0] == '_')
+      if (substr($name,0,1) == '_')
       {
          parent::__unset($name);
       } elseif (array_key_exists($name, $this->ctrlList)) {
@@ -374,7 +397,7 @@ abstract class TController extends TKernel
                return NULL;
             }
 
-            $controller = $refCtrl->newInstanceWithoutConstructor();
+            $controller = (object) $refCtrl->newInstanceWithoutConstructor();
             $controller->className = $ctrlClass;
             $controller->classNamespace = $namespace;
             $controller->classPathLocation = $path;
@@ -389,13 +412,13 @@ abstract class TController extends TKernel
                if ($refCtrl->hasProperty('Model'))
                {
                   $modelClass = $controller->classNamespace.'\Model';
-                  $Model = new ReflectionProperty($controller->className, 'Model');
-                  $Model->setAccessible( true );
+                  $ModelRef = new ReflectionProperty($controller->className, 'Model');
+                  $ModelRef->setAccessible( true );
                   if (class_exists($modelClass))
                   {
-                     $Model->setValue($controller, new $modelClass());
+                     $ModelRef->setValue($controller, new $modelClass());
                   } else {
-                     $Model->setValue($controller, new TModel());
+                     $ModelRef->setValue($controller, new TModel());
                   }
                }
             }
@@ -452,7 +475,12 @@ abstract class TController extends TKernel
                      $this->ctrlList['View'] = new TView();
                      $this->ctrlList['View']->loadFile($fileName);
                   }
-                  return $refMethod->invokeArgs($this, $params);
+                  $result = $refMethod->invokeArgs($this, $params);
+                  if (!$result AND isset($this->ctrlList['View']))
+                  {
+                     $result = $this->ctrlList['View'];
+                  }
+                  return $result;
                }
             }
          } else {

@@ -58,5 +58,10 @@ class TElementList
          );
       }
    }
+
+   public function getList() : array
+   {
+      return $this->elementList;
+   }
 }
 ?>

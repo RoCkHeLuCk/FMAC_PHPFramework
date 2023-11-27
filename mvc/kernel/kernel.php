@@ -31,7 +31,9 @@ class TKernel
    *   Define Variable List MVC
    *   @var  array
    */
-   private static array $mvcList = array();
+   private static array $globList = array();
+
+   protected static array $flow = array();
 
    /**
    *   set global Variable in MVC
@@ -39,11 +41,12 @@ class TKernel
    *   @method   __set
    *   @param    string           $name
    *   @param    mixed            $value
-   *   @return   void
+   *   @return   mixed            $value
    */
-   public function __set(string $name, $value) : void
+   public function __set(string $name, $value)
    {
-      TKernel::$mvcList[$name] = $value;
+      TKernel::$globList[$name] = $value;
+      return $value;
    }
 
    /**
@@ -55,9 +58,9 @@ class TKernel
    */
    public function &__get(string $name)
    {
-      if (array_key_exists($name,TKernel::$mvcList))
+      if (array_key_exists($name,TKernel::$globList))
       {
-         return TKernel::$mvcList[$name];
+         return TKernel::$globList[$name];
       } else {
          if (isDebug())
          {
@@ -76,7 +79,7 @@ class TKernel
    */
    public function __isset($name) : bool
    {
-      return array_key_exists($name,TKernel::$mvcList);
+      return array_key_exists($name,TKernel::$globList);
    }
 
    /**
@@ -88,15 +91,44 @@ class TKernel
    */
    public function __unset($name) : void
    {
-      if (array_key_exists($name,TKernel::$mvcList))
+      if (array_key_exists($name,TKernel::$globList))
       {
-         unset( TKernel::$mvcList[$name] );
+         unset( TKernel::$globList[$name] );
       } else {
          if (isDebug())
          {
             echo "TKernel ERROR: Variable ou method ($name) no found";
          }
       }
+   }
+
+   /**
+    * Use a flow data or create if no found
+    *
+    * @param  string ...$levels
+    *
+    * @return array|null
+    */
+   protected function &flowUse(string ...$levels) : ?array
+   {
+      $array = &TKernel::$flow;
+      if ($levels)
+      {
+         $nameFlow = end($levels);
+         foreach ($levels as $level)
+         {
+            if (!array_key_exists($level, $array))
+            {
+               $array[$level] = array();
+            }
+            $array = &$array[$level];
+         }
+      } else {
+         $nameFlow = 'flow';
+      }
+
+      TKernel::$globList['_'.$nameFlow] = &$array;
+      return $array;
    }
 
    /**

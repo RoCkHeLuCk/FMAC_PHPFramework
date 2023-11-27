@@ -30,7 +30,7 @@ class TModel extends TModelElement
     *   @method   connectDB
     *   @param    string   $fileName   INI File formatted
     */
-   public static function connectDB(string $fileName)
+   public static function connectDB(string $fileName, ?array $varList = NULL)
    {
 		if (!file_exists($fileName))
 		{
@@ -58,9 +58,7 @@ class TModel extends TModelElement
                {
                   $dsn .= ';port='.$value['port'];
                }
-            } else
-            if (issets($value,'server'))
-            {
+            } elseif (issets($value,'server')) {
                $dsn.=':server='.$value['server'];
                if ( array_key_exists('port',$value) )
                {
@@ -71,17 +69,23 @@ class TModel extends TModelElement
             if ( array_key_exists('dbname',$value) )
             {
                $dsn .= ';dbname='.$value['dbname'];
-            } else
-            if ( array_key_exists('database',$value) )
-            {
+            } elseif ( array_key_exists('database',$value) ) {
                $dsn .= ';database='.$value['database'];
             }
-         }   
+
+            if (array_key_exists('charset', $value)) {
+               $dsn .= ';charset=' . $value['charset'];
+            }
+         }
+
+         $dsn = replaceVariables($varList, $dsn);
+         $user = replaceVariables($varList, $value['user']);
+         $password = replaceVariables($varList, $value['password']);
 
          TModelElement::$ModelElementList[$key] = new TModelElement(
             $dsn,
-            $value['user'],
-            $value['password']
+            $user,
+            $password
          );
       }
    }
@@ -96,10 +100,10 @@ class TModel extends TModelElement
    */
    public function __set(string $name, $value) : void
    {
-      if (array_key_exists($name,TModelElement::$ModelElementList))
+      if (array_key_exists($name,(array) TModelElement::$ModelElementList))
       {
          throw new Exception("TModel Error: no set $name, Element is exist.");
-      } elseif ($name[0] == '_') {
+      } elseif (substr($name,0,1) == '_') {
          parent::__set($name, $value);
       } else {
          $this->modelList[$name] = $value;
@@ -114,10 +118,10 @@ class TModel extends TModelElement
    */
    public function &__get(string $name)
    {
-      if (array_key_exists($name,TModelElement::$ModelElementList))
+      if (array_key_exists($name,(array) TModelElement::$ModelElementList))
       {
          return TModelElement::$ModelElementList[$name];
-      } elseif ($name[0] == '_') {
+      } elseif (substr($name,0,1) == '_') {
          return parent::__get($name);
       } elseif (array_key_exists($name, $this->modelList)) {
          return $this->modelList[$name];
@@ -127,7 +131,7 @@ class TModel extends TModelElement
             echo "TModel ERROR: Variable ou method ($name) no found";
          }
          return NULL;
-      }  
+      }
    }
 
    /**
@@ -139,10 +143,10 @@ class TModel extends TModelElement
    */
    public function __isset($name) : bool
    {
-      if (array_key_exists($name,TModelElement::$ModelElementList))
+      if (array_key_exists($name,(array) TModelElement::$ModelElementList))
       {
-         return true; 
-      } elseif ($name[0] == '_') {
+         return true;
+      } elseif (substr($name,0,1) == '_') {
          return parent::__isset($name);
       } else {
          return array_key_exists($name, $this->modelList);
@@ -158,11 +162,11 @@ class TModel extends TModelElement
    */
    public function __unset($name) : void
    {
-      if  (array_key_exists($name,TModelElement::$ModelElementList))
+      if  (array_key_exists($name,(array) TModelElement::$ModelElementList))
       {
          throw new Exception("TModel Error: dont unset $name.");
-      } elseif ($name[0] == '_') {
-         parent::__unset($name);         
+      } elseif (substr($name,0,1) == '_') {
+         parent::__unset($name);
       } elseif (array_key_exists($name, $this->modelList)) {
          unset($this->modelList[$name]);
       } else {
@@ -170,42 +174,6 @@ class TModel extends TModelElement
          {
             echo "TModel ERROR: Variable ou method ($name) no found";
          }
-      }
-   }
-
-   /**
-    *   convert Date to DB Date
-    *
-    *   @method   convertDateToBD
-    *   @param    string            $date
-    *   @return   string
-    */
-   protected function convertDateToBD(string $date) : string
-   {
-      if( !empty($date) AND (strpos($date,"/")) )
-      {
-         $d = explode("/",$date);
-         return ($d[2]."-".$d[1]."-".$d[0]);
-      }else{
-         return '';
-      }
-   }
-
-   /**
-    *   convert Date DB to Date
-    *
-    *   @method   convertDateOfBD
-    *   @param    string            $date
-    *   @return   string
-    */
-   protected function convertDateOfBD(string $date) : string
-   {
-      if( !empty($date) AND (strpos($date,"-")) )
-      {
-         $d = explode("-",$date);
-         return ($d[2]."/".$d[1]."/".$d[0]);
-      }else{
-         return 'null';
       }
    }
 }

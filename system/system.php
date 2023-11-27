@@ -1,5 +1,54 @@
 <?php
 
+
+function reBuildRequest(bool $post = true, bool $get = true, string $cookieName = '')
+{
+   $result = array();
+   if ($cookieName AND issets($_COOKIE, $cookieName))
+   {
+      $result = json_decode( $_COOKIE[$cookieName], true );
+   }
+
+   if ($get and $_GET)
+   {
+      merge_r($result,$_GET);
+   }
+
+   if ($post and $_POST)
+   {
+      merge_r($result, $_POST);
+   }
+
+   $_REQUEST = $result;
+}
+
+
+/**
+ * convert parameters to array
+ *
+ * @param  mixed ...$parameters
+ *
+ * @return array
+ */
+function paramToArray(...$parameters) : array
+{
+   return $parameters;
+}
+
+
+/**
+ * array merge recursive, destine is first array
+ *
+ * @param  array  $destine
+ * @param  array ...$arrays
+ *
+ * @return void
+ */
+function merge_r(array &$destine, ...$arrays) : void
+{
+   $destine = array_replace_recursive($destine, ...$arrays);
+}
+
 /**
  *   tests if multiple elements of the same level exist
  *   in an array

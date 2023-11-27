@@ -40,7 +40,7 @@ class TTranslator
          if (!is_dir($path))
          {
             throw new Exception(
-               "TTranslator ERROR: Directory ({$path}) dont found"
+               "TTranslator ERROR: Directory ({$path}) don't found"
             );
          }
 
@@ -107,7 +107,7 @@ class TTranslator
          return $list;
       } else {
          throw new Exception (
-            "TTranslator ERROR: File ($from) dont found"
+            "TTranslator ERROR: File ($from) don't found"
          );
       }
    }
@@ -130,7 +130,7 @@ class TTranslator
             $this->loadLanguage($language);
          }else{
             throw new Exception(
-               "TTranslator ERROR: Language ($language) dont found"
+               "TTranslator ERROR: Language ($language) don't found"
             );
          }
       }
@@ -168,101 +168,6 @@ class TTranslator
       }
    }
 
-   /**
-    * find all words for Translater
-    *
-    * @param string   ...$directories
-    * @return void
-    */
-   public function findTranslater2(string ...$directories)
-   {
-      if (!$this->langTran)
-      {
-         return;
-      }
-
-      $varList = $this->langTran;
-      foreach ($directories as $varDir)
-      {
-         if (is_dir($varDir))
-         {
-            $fileList = listFiles(
-               $varDir,
-               '*.{[pP][hH][pP],[hH][tT][mM][lL],[jJ][sS]}',
-               true,
-               true
-            );
-
-            $echo = '';
-            foreach ($fileList as $filename)
-            {
-               $text = file_get_contents($filename);
-               $findList = array();
-               preg_replace_callback(
-                  '/{\$(\w+)(\[.*?\])?}/',
-                  function ($match) use (&$varList, &$findList)
-                  {
-                     if ( isset($match[1])
-                     AND array_key_exists($match[1], $varList) )
-                     {
-                        if (is_array($varList[$match[1]]))
-                        {
-                           if ( !isset($match[2]) ) return;
-
-                           $listKeys = array();
-                           preg_match_all(
-                              '/\[[\'"]?(\w*)[\'"]?\]/',
-                              $match[2],
-                              $listKeys
-                           );
-
-                           $listKeys2 = array();
-                           preg_match_all(
-                              '/\[(?(?=[\'"])[\'"](\w*)[\'"]|(\w*))\]/',
-                              $match[2],
-                              $listKeys2
-                           );
-
-                           if ( !isset($listKeys[1]) OR !isset($listKeys2[1])
-                           OR ( $regx = count($listKeys[1]) != count($listKeys2[1]) )
-                           OR !isset_recursive_r($varList[$match[1]],$listKeys[1]))
-                           {
-                              $findList[] =
-                                 $match[0].
-                                 ($regx?' <- syntax error':' <- not found');
-                           } else {
-                              //isSet
-                           }
-                        } else {
-                           $findList[] = $match[0] . ' <- not found';
-                        }
-                     }
-                  },
-                  $text
-               );
-
-               if ($findList)
-               {
-                  $echo .=
-                     '<h2 style="all: revert; font-size: 12px; display: block;">file: '
-                     .$filename.'</h2>';
-                  foreach ($findList as $value)
-                  {
-                     $echo .=
-                        '<p style="all: revert; font-size: 10px; display: block;">'
-                        .$value.'</p>';
-                  }
-               }
-            }
-
-            if ($echo)
-            {
-               echo '<h1 style="all: revert; font-size: 14px;">Words found to translate!</h1>'.$echo.'<br/>';
-            }
-         }
-      }
-   }
-
    public function findTranslater(bool $showNoUsed, string ...$directories)
    {
       if (!$this->langTran)
@@ -289,7 +194,7 @@ class TTranslator
          {
             $fileList = listFiles(
                $varDir,
-               '*.{[pP][hH][pP],[hH][tT][mM][lL],[jJ][sS]}',
+               '*.{[hH][tT][mM],[hH][tT][mM][lL],[jJ][sS]}',
                true,
                true
             );
@@ -298,49 +203,36 @@ class TTranslator
             {
                $text = file_get_contents($filename);
                $arrayMath = array();
-               preg_match_all(
-                  '/(?:{\$|->)(\w+)(\[.*?\])?}/',
-                  $text,
-                  $arrayMath
-               );
-
-               $length = count($arrayMath[0]);
-               for ($c = 0; $c < $length; $c++)
+               if (preg_match_all( '/{([\w\.]+)}/', $text, $arrayMath))
                {
-                  if (array_key_exists($arrayMath[1][$c], $this->langTran)
-                  AND ($arrayMath[2][$c]))
+                  foreach ($arrayMath[1] as $keyMath => $valueMath)
                   {
-                     $listKeys = array();
-                     preg_match_all(
-                        '/\[[\'"]?(\w*)[\'"]?\]/',
-                        $arrayMath[2][$c],
-                        $listKeys
-                     );
-
-                     if ($listKeys[1])
+                     $levels = explode('.',$valueMath);
+                     if ($levels AND array_key_exists($levels[0], $arrayFound))
                      {
-                        $valueFound = &$arrayFound[$arrayMath[1][$c]];
-                        foreach ($listKeys[1] as $valueKey)
+                        $valueFound = &$arrayFound[$levels[0]];
+                        array_shift($levels);
+                        foreach ($levels as $levelKey => $levelValue)
                         {
-                           if (array_key_exists($valueKey, $valueFound))
+                           if ($valueFound AND array_key_exists($levelValue, $valueFound))
                            {
-                              $valueFound = &$valueFound[$valueKey];
+                              $valueFound = &$valueFound[$levelValue];
                            } else {
-                              $valueFound['#'.$valueKey] = -1;
+                              $valueFound['#'.$levelKey] = -1;
                            }
                         }
                         if (is_numeric($valueFound))
                         {
                            $valueFound++;
                         } else {
-                           $arrayNoFound[$arrayMath[0][$c]][] = $filename;
+                           $arrayNoFound[$arrayMath[1][$keyMath]][] = $filename;
                         }
                      }
-                  }
-               }
-            }
-         }
-      }
+                  }//foreach math
+               }//if preg
+            }//foreach fileList
+         }//if is_dir
+      }//foreach directory
 
       if ($arrayNoFound)
       {

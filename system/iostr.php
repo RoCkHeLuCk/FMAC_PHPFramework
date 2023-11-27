@@ -1,5 +1,18 @@
 <?php
 
+function coalesce(...$values)
+{
+   foreach ($values as $value)
+   {
+      if($value)
+      {
+         return $value;
+      }
+   }
+   return NULL;
+}
+
+
 /**
  * insert Quote in string
  *
@@ -30,7 +43,7 @@ define(
       '"'  => '&#34;',
       '$'  => '&#36;',
       '&'  => '&#38;',
-      '\'' => '&#39;',
+      "'"  => '&#39;',
       '/'  => '&#47;',
       '<'  => '&#60;',
       '>'  => '&#62;',
@@ -158,7 +171,7 @@ function numberPrefix($value, bool $bit = false,
 }
 
 /**
-*   replaces all variables within the document
+*   replaces all variables within the text
 *
 *   @method   replaceVariables
 *   @param    array              $varList
@@ -166,26 +179,26 @@ function numberPrefix($value, bool $bit = false,
 *   @param    bool               $clean
 *   @return   string
 */
-function replaceVariables(?array $varList, string $text, bool $clean = false) : string
+function replaceVariables2(?array $varList, string $text, bool $clean = false, string $regex1 = '/{\$(\w+)(\[.*?\])?}/', string $regex2 = '/\[[\'"]?(\w*)[\'"]?\]/') : string
 {
    if ($varList)
    {
       return preg_replace_callback(
-         '/{\$(\w+)(\[.*?\])?}/',
-         function ($match) use ($varList, $clean): string
+         $regex1,
+         function ($match) use ($varList, $clean, $regex2): string
          {
             $result = $clean?'':$match[0];
             if (isset($match[1])
             AND(array_key_exists($match[1], $varList)))
             {
                $var = $varList[$match[1]];
-               if (isset($match[2]))
+               if (isset($match[2]) AND ($match[2]))
                {
                   if (is_array($var))
                   {
                      $listKeys = array();
                      preg_match_all(
-                        '/\[[\'"]?(\w*)[\'"]?\]/',
+                        $regex2,
                         $match[2],
                         $listKeys
                      );
@@ -216,6 +229,55 @@ function replaceVariables(?array $varList, string $text, bool $clean = false) : 
    }
 }
 
+
+function replaceVariables(?array $varList, string $text, bool $clean = false)
+{
+   if ($text)
+   {
+      $count = 1;
+      $loop = 3;
+      while ($count AND $loop)
+      {
+         $text = preg_replace_callback(
+            '/{([\w\.]+)}/',
+            function ($match) use ($varList)
+            {
+               $result = '';
+               if ($match[1])
+               {
+                  $level = explode('.',$match[1]);
+                  if ($level)
+                  {
+                     $result = $varList;
+                     foreach ($level as $value)
+                     {
+                        if ($result AND array_key_exists($value, $result))
+                        {
+                           $result = $result[$value];
+                        } else {
+                           $result = '';
+                           break;
+                        }
+                     }
+                  }
+               }
+               if (is_null($result) OR is_scalar($result))
+               {
+                  return strval($result);
+               }else{
+                  return '';
+               }
+            },
+            $text,
+            -1,
+            $count
+         );
+         $loop--;
+      }
+      return $text;
+   }
+   return '';
+}
 
 /**
  * fileLoadCSV.

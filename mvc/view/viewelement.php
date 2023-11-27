@@ -5,6 +5,7 @@ require_once(__DIR__.'/viewattribute.php');
 use DOMNode;
 use DOMElement;
 use DOMDocument;
+use DOMNamedNodeMap;
 use Exception;
 use FMAC\MVC\TView;
 use FMAC\MVC\View\TViewAttribute;
@@ -17,10 +18,9 @@ use FMAC\MVC\View\TViewAttribute;
  */
 class TViewElement
 {
-   protected const NAME_NEWID = 'newID';
    protected const NAME_ID = 'id';
-   protected const NAME_BLOCK = 'viewBlock';
-   protected const REPLACE_AMP = '/&(?!\w+;)(?!#[\dA-F]+;)/i';
+   protected const DATA_ID = 'data-id';
+
 
    /**
     *  name of element, attribute NAME_ID
@@ -49,12 +49,6 @@ class TViewElement
    private array $ViewElementList = array();
 
    /**
-    *   Options clean Elements
-    *   @var  array of String
-    */
-   private array $BlockOptions = array();
-
-   /**
     *   Construct TViewElement
     *
     *   @method   __construct
@@ -68,13 +62,7 @@ class TViewElement
       {
          $this->parentViewElement = $parentViewElement;
       }
-
       $this->XMLElement = $XMLElement;
-      if ($XMLElement->hasAttribute(TViewElement::NAME_BLOCK))
-      {
-         $this->BlockOptions = explode(' ', $XMLElement->getAttribute(TViewElement::NAME_BLOCK));
-      }
-      $this->__refresh();
    }
 
    /**
@@ -110,9 +98,7 @@ class TViewElement
       {
          throw new Exception("TView ERROR: {$id} not found");
       }
-      $ViewElement->cleanMe();
-      $ViewElement->insertOf($value);
-      return $value;
+      $ViewElement->insertOf($value, TView::INSERT_REPLACE);
    }
 
    /**
@@ -123,26 +109,7 @@ class TViewElement
     */
    public function __toString() : string
    {
-      return $this->getXMLDocument()->saveXML($this->XMLElement);
-   }
-
-   /**
-    *   Create Element List Childs
-    *
-    *   @method   __refresh
-    */
-   public function __refresh() : void
-   {
-      $this->ViewElementList = array();
-      $XMLElementList = $this->XMLElement->getElementsByTagName('*');
-      foreach ($XMLElementList as $XMLElement)
-      {
-         if($XMLElement->hasAttribute(TViewElement::NAME_ID))
-         {
-            $name = $XMLElement->getAttribute(TViewElement::NAME_ID);
-            $this->ViewElementList[$name] = new TViewElement($this, $XMLElement, $name);
-         }
-      }
+      return $this->getXMLDocument()->saveXML($this->XMLElement, $this->getXMLOptions());
    }
 
    /**
@@ -153,9 +120,9 @@ class TViewElement
     */
    public function attribute(string $attribute) : TViewAttribute
    {
-      if (!empty($attribute))
+      if ($attribute != '')
       {
-         return new TViewAttribute($this->XMLElement,$attribute);
+         return new TViewAttribute($this->XMLElement, $attribute);
       }else{
          throw new Exception('TView ERROR: Attribute name can not be empty');
       }
@@ -173,6 +140,11 @@ class TViewElement
       return $this->XMLElement->hasAttribute($attribute);
    }
 
+   public function getAttributeList() : ?DOMNamedNodeMap
+   {
+      return $this->XMLElement->attributes;
+   }
+
    /**
     *   Check if child exists
     *
@@ -182,7 +154,7 @@ class TViewElement
     */
    public function hasElement(string $id) : bool
    {
-      return array_key_exists($id, $this->ViewElementList);
+      return ($this->getElement($id))?true:false;
    }
 
    /**
@@ -231,7 +203,6 @@ class TViewElement
       }
    }
 
-
    /**
     *   Deletes the element by id
     *
@@ -247,7 +218,6 @@ class TViewElement
       }
    }
 
-
    /**
     *   Deletes the element itself and its children
     *
@@ -256,17 +226,6 @@ class TViewElement
    public function deleteMe() : void
    {
       $this->parentViewElement->deleteChild($this->IDViewElement);
-      //$this->XMLElement->parentNode->removeChild($this->XMLElement);
-
-      //$this->parentViewElement->removeChild($this->IDViewElement);
-      //$this->XMLElement->remove();
-
-      //unset($this->XMLElement);
-
-      // if (isset($this->parentViewElement))
-      // {
-      //    $this->parentViewElement->__refresh();
-      // }
    }
 
    /**
@@ -295,15 +254,15 @@ class TViewElement
     *                           only be modified
     *                           by this return
     */
-   public function cloneMe(string $id = '') : TViewElement
+   public function cloneMe(string $newID = '') : TViewElement
    {
       $XMLClone = $this->XMLElement->cloneNode(true);
       $this->cleanBlockElement($XMLClone);
       $this->XMLElement->parentNode->insertBefore($XMLClone, $this->XMLElement);
-      $result = new TViewElement($this->parentViewElement, $XMLClone, $id);
-      if ($id)
+      $result = new TViewElement($this->parentViewElement, $XMLClone, $newID);
+      if ($newID)
       {
-         $this->XMLElement->setAttribute(TViewElement::NAME_ID, $id);
+         $this->XMLElement->setAttribute(TViewElement::NAME_ID, $newID);
          $this->parentViewElement->insertViewElement($result);
       }
       return $result;
@@ -335,7 +294,7 @@ class TViewElement
    {
       $View = new TView();
       $View->loadFile($fileName);
-      $this->insertOf($View,$option);
+      $this->insertOf($View, $option);
    }
 
    /**
@@ -353,7 +312,6 @@ class TViewElement
       $View->loadText($text);
       $this->insertOf($View,$option);
    }
-
 
    /**
     *   Inserts an element / text within the element itself
@@ -382,10 +340,6 @@ class TViewElement
                {
                   $this->XMLElement->insertBefore($valueIns,
                      $this->XMLElement);
-                  if (isset($this->parentViewElement))
-                  {
-                     $this->parentViewElement->__refresh();
-                  }
                }break;
 
                case TView::INSERT_FIRST:
@@ -397,13 +351,11 @@ class TViewElement
                   }else{
                      $this->XMLElement->appendChild($valueIns);
                   }
-                  $this->__refresh();
                }break;
 
                case TView::INSERT_LAST:
                {
                   $this->XMLElement->appendChild($valueIns);
-                  $this->__refresh();
                }break;
 
                case TView::INSERT_AFTER:
@@ -415,10 +367,11 @@ class TViewElement
                   }else{
                      $this->XMLElement->parentNode->appendChild($valueIns);
                   }
-                  if (isset($this->parentViewElement))
-                  {
-                     $this->parentViewElement->__refresh();
-                  }
+               }break;
+
+               case TView::INSERT_REPLACE:
+               {
+                  $this->XMLElement->parentNode->replaceChild($valueIns, $this->XMLElement);
                }break;
             }
          }
@@ -433,15 +386,14 @@ class TViewElement
     *   @param    mixed            $value
     *
     */
-   public function oneBlock($value) : void
+   public function oneBlock($value) : ?TViewElement
    {
       $XMLOldText = $this->__toString();
       $XMLNewDoc = new DOMDocument();
 
       $varList = array('value' => $value);
-      $XMLNewText = replaceVariables($varList,$XMLOldText);
-
-      $XMLNewText = preg_replace(TViewElement::REPLACE_AMP,'&amp;',$XMLNewText);
+      $XMLNewText = replaceVariables($varList, $XMLOldText);
+      $XMLNewText = preg_replace(TView::REGEX_AMP,'&amp;',$XMLNewText);
       $XMLNewDoc->loadXML($XMLNewText, $this->getXMLOptions());
       $this->cleanBlockElement($XMLNewDoc->documentElement);
       $XMLNewElement = $this->getXMLDocument()->importNode(
@@ -451,9 +403,40 @@ class TViewElement
       {
          $this->XMLElement->parentNode->
             insertBefore($XMLNewElement,$this->XMLElement);
-         if (isset($this->parentViewElement))
+         return new TViewElement($this->parentViewElement,$XMLNewElement);
+      }
+      return NULL;
+   }
+
+   /**
+    *    Foreach Elements "ID"
+    *
+    *    @method  foreachElements
+    *    @param   array $array     Key correspond ID Value correspond $value
+    *    @return  void
+    */
+   public function foreachElements(array $array) : void
+   {
+      $XMLNewDoc = new DOMDocument();
+      $XMLNewDoc->preserveWhiteSpace = false;
+
+      foreach ($array as $key => $value)
+      {
+         if ($this->hasElement($key))
          {
-            $this->parentViewElement->__refresh();
+            $XMLOldDoc = $this->$key->getXMLElement();
+            $XMLOldText = $this->$key->__toString();
+            $varList = array('value' => $value);
+            $XMLNewText = replaceVariables($varList, $XMLOldText);
+            $XMLNewText = preg_replace(TView::REGEX_AMP,'&amp;',$XMLNewText);
+            $XMLNewDoc->loadXML($XMLNewText, $this->getXMLOptions());
+            $XMLNewElement = $this->XMLDoc->importNode(
+               $XMLNewDoc->documentElement, true);
+
+            if (!is_null($XMLNewElement))
+            {
+               $XMLOldDoc->parentNode->replaceChild($XMLNewElement, $XMLOldDoc);
+            }
          }
       }
    }
@@ -478,8 +461,7 @@ class TViewElement
             'value' => $arrayValues
          );
          $XMLNewText = replaceVariables($varList,$XMLOldText);
-
-         $XMLNewText = preg_replace(TViewElement::REPLACE_AMP,'&amp;',$XMLNewText);
+         $XMLNewText = preg_replace(TView::REGEX_AMP,'&amp;',$XMLNewText);
          $XMLNewDoc->loadXML($XMLNewText, $this->getXMLOptions());
          $this->cleanBlockElement($XMLNewDoc->documentElement);
          $XMLNewElement = $this->getXMLDocument()->importNode(
@@ -490,10 +472,6 @@ class TViewElement
             $this->XMLElement->parentNode->
                insertBefore($XMLNewElement,$this->XMLElement);
          }
-      }
-      if (isset($this->parentViewElement))
-      {
-         $this->parentViewElement->__refresh();
       }
    }
 
@@ -518,7 +496,7 @@ class TViewElement
 
       $XMLOldText = $this->__toString();
       $XMLNewText = str_replace($search, $replace, $XMLOldText);
-      $XMLNewText = preg_replace(TViewElement::REPLACE_AMP,'&amp;',$XMLNewText);
+      $XMLNewText = preg_replace(TView::REGEX_AMP,'&amp;',$XMLNewText);
 
       $XMLNewDoc = new DOMDocument();
       $XMLNewDoc->loadXML($XMLNewText, $this->getXMLOptions());
@@ -529,10 +507,8 @@ class TViewElement
       {
          $this->XMLElement->parentNode->replaceChild($XMLNewElement, $this->XMLElement);
          $this->XMLElement = $XMLNewElement;
-         $this->__refresh();
       }
    }
-
 
    /**
     *   clean optinos BlockElement
@@ -542,71 +518,11 @@ class TViewElement
    private function cleanBlockElement(DOMElement $XMLNewElement) : void
    {
       $XMLNewElement->removeAttribute(TViewElement::NAME_ID);
-      $XMLNewElement->removeAttribute(TViewElement::NAME_BLOCK);
-
-      $id = in_array('id', $this->BlockOptions);
-      $node = in_array('nodes', $this->BlockOptions);
-      $attribute = in_array('attributes', $this->BlockOptions);
-      $self = in_array('self', $this->BlockOptions);
-
-      if ($id OR $node OR $attribute)
+      if ($XMLNewElement AND $XMLNewElement->hasAttribute(TViewElement::DATA_ID) )
       {
-         $XMLChilds = $XMLNewElement->getElementsByTagName('*');
-         if($XMLChilds)
-         for ($c = $XMLChilds->length-1; $c >= 0; $c--)
-         {
-            if ($XMLChilds[$c] instanceof DOMElement)
-            {
-               //remove ID
-               if ($id AND !$XMLChilds[$c]->hasAttribute(TViewElement::NAME_ID))
-               {
-                  $XMLChilds[$c]->removeAttribute(TViewElement::NAME_ID);
-               }
-
-               //remove empty node
-               if ($node AND !$XMLChilds[$c]->hasChildNodes())
-               {
-                  $XMLChilds[$c]->parentNode->removeChild($XMLChilds);
-               }
-
-               //remove empty attributes
-               if(($attribute) AND ($XMLChilds[$c]->attributes))
-               for ($d = $XMLChilds[$c]->attributes->length-1; $d >= 0; $d--)
-               {
-                  if ($XMLChilds[$c]->attributes[$d]->value == '')
-                  {
-                     $XMLChilds[$c]->removeAttribute(
-                        $XMLChilds[$c]->attributes[$d]->name);
-                  }
-               }
-            }
-         }
-      }
-
-      if($attribute AND $XMLNewElement->attributes)
-      for ($c = $XMLNewElement->attributes->length-1; $c >= 0; $c--)
-      {
-         if ($XMLNewElement->attributes[$c]->value == '')
-         {
-            $XMLNewElement->removeAttribute(
-               $XMLNewElement->attributes[$c]->name);
-         }
-      }
-
-      if ($self)
-      {
-         if (!$XMLNewElement->hasChildNodes())
-         {
-            $XMLNewElement->parentNode->removeChild($XMLNewElement);
-            $XMLNewElement = NULL;
-         }
-      }
-
-      if ($XMLNewElement AND $XMLNewElement->hasAttribute(TViewElement::NAME_NEWID) )
-      {
-         $newID = $XMLNewElement->getAttribute(TViewElement::NAME_NEWID);
+         $newID = $XMLNewElement->getAttribute(TViewElement::DATA_ID);
          $XMLNewElement->setAttribute(TViewElement::NAME_ID, $newID);
-         $XMLNewElement->removeAttribute(TViewElement::NAME_NEWID);
+         $XMLNewElement->removeAttribute(TViewElement::DATA_ID);
       }
    }
 
@@ -656,6 +572,19 @@ class TViewElement
       {
          return $this->ViewElementList[$id];
       }else{
+         $XMLElementList = $this->XMLElement->getElementsByTagName('*');
+         foreach ($XMLElementList as $XMLElement)
+         {
+            if($XMLElement->hasAttribute(TViewElement::NAME_ID))
+            {
+               $name = $XMLElement->getAttribute(TViewElement::NAME_ID);
+               if ($name == $id)
+               {
+                  $this->ViewElementList[$name] = new TViewElement($this, $XMLElement, $name);
+                  return $this->ViewElementList[$name];
+               }
+            }
+         }
          return NULL;
       }
    }

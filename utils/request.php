@@ -174,13 +174,13 @@ class TRequestElement
    {
       if ((TRequest::OUT_COOKIE & $this->ioBitwise) AND ($this->isValid))
       {
-         setcookie($this->key.'['.$this->name.']',
+         setcookie(
+            $this->key.'['.$this->name.']',
             $this->value,
-            self::COOKIE_2038,
-            './; samesite=strict',
-            '',
-            true,
-            true
+            array(
+               'expires' => strtotime('+1 year'),
+               'samesite' => 'lax'
+            )
          );
       }
 
@@ -229,9 +229,10 @@ class TRequest
    public const IN_COOKIE    = 4;    //00000100
    public const IN_SESSION   = 8;    //00001000
    public const IN_REQUEST   = 15;   //00001111
-   public const OUT_URL      = 16;   //00010000
-   public const OUT_COOKIE   = 32;   //00100000
-   public const OUT_SESSION  = 64;   //01000000
+   public const IN_FILE      = 16;   //00010000
+   public const OUT_URL      = 32;   //00100000
+   public const OUT_COOKIE   = 64;   //01000000
+   public const OUT_SESSION  = 128;  //10000000
 
    /**
     *   Request Element List
@@ -248,6 +249,13 @@ class TRequest
    private string $key = '';
 
    /**
+    *    Cookie Config
+    *
+    *    @var   array
+    */
+   private array $cookieSettings = array();
+
+   /**
     *   construct Request Controller
     *
     *   @method   __construct
@@ -256,6 +264,22 @@ class TRequest
    public function __construct(string $key = '')
    {
       $this->key = $key;
+
+      //$_SERVER["REQUEST_METHOD"]
+   }
+
+   public function cookieConfig($expires = 0, string $sameSite = 'Lax', string $path = '/', string $domain = '', bool $secure = false, bool $httpOnly = false,)
+   {
+      //strtotime('+1 year')
+
+      $this->cookieSettings = array(
+         'expires' => $expires,
+         'path' => $path,
+         'domain' => $domain,
+         'secure' => $secure,
+         'samesite' => $sameSite,
+         'httponly' => $httpOnly,
+      );
    }
 
    /**
@@ -317,7 +341,7 @@ class TRequest
       $result = array();
       foreach ($this->requestList as $reqKey => $reqValue)
       {
-         if ((!$keys) or (array_key_exists($reqKey, $keys)))
+         if ((!$keys) or (in_array($reqKey, $keys)))
          {
             $result[$reqKey] = $reqValue->getValue();
          }
